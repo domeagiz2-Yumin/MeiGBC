@@ -444,37 +444,32 @@
       document.getElementById('screen-game').style.display = 'flex';
       document.getElementById('gameTitle').textContent = selectedFile.name;
 
-      if (emuLoaded) {
-        // EmulatorJS already loaded — just reload with new game
-        loadEmulator();
-        return;
-      }
+      // Read file as base64 so EmulatorJS can use it directly (no CORS issue)
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result; // data:application/octet-stream;base64,...
 
-      // Load EmulatorJS script once
-      const script = document.createElement('script');
-      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-      script.onload = () => { emuLoaded = true; };
-      script.onerror = () => {
-        document.getElementById('loading-overlay').innerHTML =
-          '<div style="color:#ff6fd8;font-family:monospace;text-align:center;padding:20px">❌ Failed to load EmulatorJS.<br/>Check your internet connection.</div>';
+        // Set ALL configs BEFORE loading script
+        window.EJS_player        = '#game-container';
+        window.EJS_core          = 'gambatte';
+        window.EJS_gameUrl       = base64;
+        window.EJS_gameName      = selectedFile.name;
+        window.EJS_color         = '#ff6fd8';
+        window.EJS_startOnLoaded = true;
+        window.EJS_onGameStart   = () => {
+          document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        // Load script AFTER configs are set
+        const script = document.createElement('script');
+        script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+        script.onerror = () => {
+          document.getElementById('loading-overlay').innerHTML =
+            '<div style="color:#ff6fd8;font-family:monospace;text-align:center;padding:20px">❌ Failed to load EmulatorJS.<br/>Check your internet connection.</div>';
+        };
+        document.body.appendChild(script);
       };
-      document.body.appendChild(script);
-
-      loadEmulator();
-    }
-
-    function loadEmulator() {
-      const blobUrl = URL.createObjectURL(selectedFile);
-
-      window.EJS_player        = '#game-container';
-      window.EJS_core          = 'gambatte';
-      window.EJS_gameUrl       = blobUrl;
-      window.EJS_gameName      = selectedFile.name;
-      window.EJS_color         = '#ff6fd8';
-      window.EJS_startOnLoaded = true;
-      window.EJS_onGameStart   = () => {
-        document.getElementById('loading-overlay').style.display = 'none';
-      };
+      reader.readAsDataURL(selectedFile);
     }
 
     // ---- Back to home ----
