@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GBC Emulator</title>
+  <title>PIXEL VAULT — GBC Emulator</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
 
@@ -17,92 +17,76 @@
       overflow-x: hidden;
     }
 
-    /* ---- Floating bubbles background ---- */
-    .bubbles {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .bubble {
-      position: absolute;
-      bottom: -100px;
-      border-radius: 50%;
-      opacity: 0.15;
-      animation: rise linear infinite;
-    }
-    .bubble:nth-child(1)  { width:60px;  height:60px;  left:5%;   background:#ff6fd8; animation-duration:8s;  animation-delay:0s;   }
-    .bubble:nth-child(2)  { width:40px;  height:40px;  left:15%;  background:#3bc4f2; animation-duration:10s; animation-delay:1s;   }
-    .bubble:nth-child(3)  { width:80px;  height:80px;  left:25%;  background:#ffdd57; animation-duration:7s;  animation-delay:2s;   }
-    .bubble:nth-child(4)  { width:50px;  height:50px;  left:40%;  background:#a8ff78; animation-duration:11s; animation-delay:0.5s; }
-    .bubble:nth-child(5)  { width:70px;  height:70px;  left:55%;  background:#ff9a9e; animation-duration:9s;  animation-delay:1.5s; }
-    .bubble:nth-child(6)  { width:35px;  height:35px;  left:65%;  background:#f9ca24; animation-duration:12s; animation-delay:3s;   }
-    .bubble:nth-child(7)  { width:90px;  height:90px;  left:75%;  background:#6c5ce7; animation-duration:8s;  animation-delay:2.5s; }
-    .bubble:nth-child(8)  { width:45px;  height:45px;  left:85%;  background:#fd79a8; animation-duration:10s; animation-delay:4s;   }
-    .bubble:nth-child(9)  { width:55px;  height:55px;  left:92%;  background:#00cec9; animation-duration:9s;  animation-delay:1s;   }
-    .bubble:nth-child(10) { width:30px;  height:30px;  left:33%;  background:#e17055; animation-duration:13s; animation-delay:5s;   }
-
+    /* Bubbles */
+    .bubbles { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+    .bubble { position:absolute; bottom:-100px; border-radius:50%; opacity:0.15; animation:rise linear infinite; }
+    .bubble:nth-child(1)  { width:60px; height:60px; left:5%;  background:#ff6fd8; animation-duration:8s;  animation-delay:0s;   }
+    .bubble:nth-child(2)  { width:40px; height:40px; left:15%; background:#3bc4f2; animation-duration:10s; animation-delay:1s;   }
+    .bubble:nth-child(3)  { width:80px; height:80px; left:25%; background:#ffdd57; animation-duration:7s;  animation-delay:2s;   }
+    .bubble:nth-child(4)  { width:50px; height:50px; left:40%; background:#a8ff78; animation-duration:11s; animation-delay:0.5s; }
+    .bubble:nth-child(5)  { width:70px; height:70px; left:55%; background:#ff9a9e; animation-duration:9s;  animation-delay:1.5s; }
+    .bubble:nth-child(6)  { width:35px; height:35px; left:65%; background:#f9ca24; animation-duration:12s; animation-delay:3s;   }
+    .bubble:nth-child(7)  { width:90px; height:90px; left:75%; background:#6c5ce7; animation-duration:8s;  animation-delay:2.5s; }
+    .bubble:nth-child(8)  { width:45px; height:45px; left:85%; background:#fd79a8; animation-duration:10s; animation-delay:4s;   }
+    .bubble:nth-child(9)  { width:55px; height:55px; left:92%; background:#00cec9; animation-duration:9s;  animation-delay:1s;   }
+    .bubble:nth-child(10) { width:30px; height:30px; left:33%; background:#e17055; animation-duration:13s; animation-delay:5s;   }
     @keyframes rise {
-      0%   { transform: translateY(0) scale(1);   opacity: 0.15; }
-      50%  { opacity: 0.25; }
-      100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+      0%   { transform:translateY(0) scale(1);     opacity:0.15; }
+      50%  { opacity:0.25; }
+      100% { transform:translateY(-110vh) scale(1.2); opacity:0; }
     }
 
-    /* ---- Header ---- */
-    header {
+    /* ---- SCREEN: HOME ---- */
+    #screen-home {
       position: relative;
       z-index: 1;
-      text-align: center;
-      padding: 48px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 40px;
     }
+
     .logo-title {
       font-family: 'Press Start 2P', cursive;
-      font-size: clamp(18px, 5vw, 36px);
+      font-size: clamp(16px, 5vw, 32px);
       background: linear-gradient(90deg, #ff6fd8, #3bc4f2, #ffdd57, #a8ff78, #ff6fd8);
       background-size: 300%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: shine 4s linear infinite;
-      text-shadow: none;
       letter-spacing: 2px;
+      text-align: center;
     }
-    @keyframes shine {
-      0%   { background-position: 0%; }
-      100% { background-position: 300%; }
-    }
+    @keyframes shine { 0%{background-position:0%} 100%{background-position:300%} }
+
     .logo-sub {
       margin-top: 10px;
-      font-size: 14px;
+      font-size: 13px;
       color: #c8c8ff;
       letter-spacing: 3px;
       text-transform: uppercase;
+      margin-bottom: 32px;
     }
 
-    /* ---- Card ---- */
     .card {
-      position: relative;
-      z-index: 1;
-      max-width: 480px;
-      margin: 30px auto;
+      width: 100%;
+      max-width: 460px;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 24px;
-      padding: 36px 28px;
+      padding: 32px 24px;
       backdrop-filter: blur(14px);
       box-shadow: 0 8px 40px rgba(0,0,0,0.4);
     }
 
     .section-title {
       font-family: 'Press Start 2P', cursive;
-      font-size: 11px;
+      font-size: 10px;
       color: #ffdd57;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       letter-spacing: 1px;
     }
 
-    /* ---- System badge ---- */
     .system-badge {
       display: inline-flex;
       align-items: center;
@@ -112,16 +96,15 @@
       padding: 8px 20px;
       font-weight: 900;
       font-size: 15px;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       box-shadow: 0 4px 20px rgba(168,85,247,0.4);
     }
-    .system-badge span { font-size: 20px; }
 
-    /* ---- Drop Zone ---- */
+    /* Drop zone — desktop */
     .drop-zone {
       border: 3px dashed rgba(255,255,255,0.25);
       border-radius: 18px;
-      padding: 40px 20px;
+      padding: 38px 20px;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s;
@@ -135,78 +118,60 @@
       transform: scale(1.01);
     }
     .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
+      position: absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
     }
-    .drop-icon { font-size: 56px; margin-bottom: 12px; animation: bounce 2s infinite; }
-    @keyframes bounce {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-8px); }
-    }
-    .drop-text { font-size: 16px; font-weight: 700; color: #e2d9f3; margin-bottom: 6px; }
+    .drop-icon { font-size: 52px; margin-bottom: 10px; animation: bounce 2s infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .drop-text { font-size: 15px; font-weight: 700; color: #e2d9f3; margin-bottom: 4px; }
     .drop-sub  { font-size: 12px; color: #9b8ec4; }
 
-    /* ---- File info ---- */
+    /* Pick button — mobile */
+    .mobile-pick { display: none; flex-direction: column; align-items: center; gap: 12px; }
+    .pick-btn {
+      width: 100%;
+      padding: 22px;
+      border-radius: 20px;
+      border: none;
+      background: linear-gradient(135deg, #a855f7, #ec4899, #3bc4f2);
+      background-size: 200%;
+      animation: btnshine 3s linear infinite;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 28px rgba(168,85,247,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .pick-btn:active { transform: scale(0.97); }
+    .pick-btn input[type="file"] { display: none; }
+    .pick-sub { font-size: 12px; color: #9b8ec4; }
+    @keyframes btnshine { 0%{background-position:0%} 100%{background-position:200%} }
+
+    @media (hover: none) and (pointer: coarse) {
+      .drop-zone   { display: none !important; }
+      .mobile-pick { display: flex !important; }
+    }
+
+    /* File info */
     .file-info {
       display: none;
       align-items: center;
       gap: 12px;
-      margin-top: 18px;
+      margin-top: 16px;
       background: rgba(168,255,120,0.1);
       border: 1px solid rgba(168,255,120,0.3);
       border-radius: 14px;
-      padding: 14px 18px;
+      padding: 14px 16px;
     }
     .file-info.show { display: flex; }
-    .file-icon { font-size: 28px; }
-    .file-name { font-weight: 700; font-size: 14px; color: #a8ff78; word-break: break-all; }
+    .file-icon { font-size: 26px; }
+    .file-name { font-weight: 700; font-size: 13px; color: #a8ff78; word-break: break-all; }
     .file-size { font-size: 11px; color: #78c454; margin-top: 2px; }
 
-    /* ---- Play Button ---- */
-    .play-btn {
-      display: block;
-      width: 100%;
-      margin-top: 24px;
-      padding: 16px;
-      font-family: 'Press Start 2P', cursive;
-      font-size: 14px;
-      color: #1a1a2e;
-      background: linear-gradient(135deg, #ffdd57, #ff6fd8, #3bc4f2);
-      background-size: 200%;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 6px 24px rgba(255,111,216,0.4);
-      animation: btnshine 3s linear infinite;
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    .play-btn.active {
-      opacity: 1;
-      pointer-events: all;
-    }
-    .play-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 32px rgba(255,111,216,0.6);
-    }
-    @keyframes btnshine {
-      0%   { background-position: 0%; }
-      100% { background-position: 200%; }
-    }
-
-    /* ---- Supported formats ---- */
-    .formats {
-      margin-top: 20px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .formats { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
     .fmt-tag {
       background: rgba(255,255,255,0.1);
       border-radius: 8px;
@@ -214,13 +179,142 @@
       font-size: 11px;
       font-weight: 700;
       color: #c8c8ff;
-      letter-spacing: 1px;
     }
 
-    /* ---- Footer ---- */
-    footer {
+    /* Play button */
+    .play-btn {
+      display: block;
+      width: 100%;
+      margin-top: 22px;
+      padding: 16px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 13px;
+      color: #1a1a2e;
+      background: linear-gradient(135deg, #ffdd57, #ff6fd8, #3bc4f2);
+      background-size: 200%;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(255,111,216,0.4);
+      animation: btnshine 3s linear infinite;
+      opacity: 0.4;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+    .play-btn.active { opacity: 1; pointer-events: all; }
+    .play-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,111,216,0.6); }
+
+    /* ---- SCREEN: GAME ---- */
+    #screen-game {
+      display: none;
       position: relative;
       z-index: 1;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .back-btn {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      color: #ff6fd8;
+      background: rgba(255,111,216,0.1);
+      border: 1px solid rgba(255,111,216,0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { background: rgba(255,111,216,0.25); }
+    .game-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 8px;
+      color: #ffdd57;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sys-badge {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .emu-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #game-container {
+      width: 100%;
+      aspect-ratio: 10/9;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 0 3px #ff6fd8, 0 0 30px rgba(255,111,216,0.3);
+      position: relative;
+    }
+
+    #loading-overlay {
+      position: absolute; inset:0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 10;
+      border-radius: 13px;
+    }
+    .loading-icon { font-size: 48px; animation: spin 1s linear infinite; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .loading-text {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: #ff6fd8;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .controls-bar {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .ctrl-item { display:flex; align-items:center; gap:6px; font-size:11px; color:#c8c8ff; }
+    .ctrl-key {
+      background: linear-gradient(135deg, #6c5ce7, #a855f7);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-weight: 900;
+      font-size: 11px;
+    }
+
+    footer {
+      position: relative; z-index:1;
       text-align: center;
       padding: 20px;
       font-size: 11px;
@@ -230,7 +324,6 @@
 </head>
 <body>
 
-  <!-- Background bubbles -->
   <div class="bubbles">
     <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
     <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
@@ -238,96 +331,160 @@
     <div class="bubble"></div>
   </div>
 
-  <!-- Header -->
-  <header>
+  <!-- ===== HOME SCREEN ===== -->
+  <div id="screen-home">
     <div class="logo-title">🎮 PIXEL VAULT</div>
     <div class="logo-sub">Game Boy Color Emulator</div>
-  </header>
 
-  <!-- Main Card -->
-  <div class="card">
-    <div class="section-title">▶ SELECT YOUR SYSTEM</div>
-    <div class="system-badge"><span>🟡</span> Game Boy Color</div>
+    <div class="card">
+      <div class="section-title">▶ SYSTEM</div>
+      <div class="system-badge"><span>🟡</span> Game Boy Color</div>
 
-    <div class="section-title">▶ LOAD ROM FILE</div>
+      <div class="section-title">▶ LOAD ROM FILE</div>
 
-    <!-- Drop Zone -->
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="romFile" accept=".gbc,.gb" />
-      <div class="drop-icon">📂</div>
-      <div class="drop-text">Tap to select ROM file</div>
-      <div class="drop-sub">or drag & drop here</div>
-    </div>
-
-    <!-- File Info -->
-    <div class="file-info" id="fileInfo">
-      <div class="file-icon">🎮</div>
-      <div>
-        <div class="file-name" id="fileName">—</div>
-        <div class="file-size" id="fileSize">—</div>
+      <!-- Desktop: Drag & Drop -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="romFile" accept=".gbc,.gb" />
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">Click or drag & drop ROM here</div>
+        <div class="drop-sub">.gbc / .gb files only</div>
       </div>
+
+      <!-- Mobile: Big Button -->
+      <div class="mobile-pick">
+        <label class="pick-btn">
+          <span>📂</span> Choose ROM File
+          <input type="file" id="romFileMobile" accept=".gbc,.gb" />
+        </label>
+        <div class="pick-sub">.gbc / .gb — stored on your device</div>
+      </div>
+
+      <!-- File Info -->
+      <div class="file-info" id="fileInfo">
+        <div class="file-icon">🎮</div>
+        <div>
+          <div class="file-name" id="fileName">—</div>
+          <div class="file-size" id="fileSize">—</div>
+        </div>
+      </div>
+
+      <div class="formats">
+        <div class="fmt-tag">.GBC</div>
+        <div class="fmt-tag">.GB</div>
+      </div>
+
+      <button class="play-btn" id="playBtn" onclick="startGame()">▶ PLAY NOW</button>
     </div>
 
-    <!-- Supported formats -->
-    <div class="formats">
-      <div class="fmt-tag">.GBC</div>
-      <div class="fmt-tag">.GB</div>
-    </div>
-
-    <!-- Play Button -->
-    <button class="play-btn" id="playBtn" onclick="startGame()">▶ PLAY NOW</button>
+    <footer>PIXEL VAULT • Bring your own ROM • No ROM included</footer>
   </div>
 
-  <footer>PIXEL VAULT • Bring your own ROM • No ROM included</footer>
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="screen-game">
+    <div class="topbar">
+      <button class="back-btn" onclick="goBack()">◀ BACK</button>
+      <div class="game-title" id="gameTitle">—</div>
+      <div class="sys-badge">GBC</div>
+    </div>
+
+    <div class="emu-wrap">
+      <div id="game-container">
+        <div id="loading-overlay">
+          <div class="loading-icon">⚙️</div>
+          <div class="loading-text">LOADING GAME...</div>
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <div class="ctrl-item"><span class="ctrl-key">Arrows</span> D-Pad</div>
+        <div class="ctrl-item"><span class="ctrl-key">Z</span> A</div>
+        <div class="ctrl-item"><span class="ctrl-key">X</span> B</div>
+        <div class="ctrl-item"><span class="ctrl-key">Enter</span> Start</div>
+        <div class="ctrl-item"><span class="ctrl-key">Shift</span> Select</div>
+        <div class="ctrl-item"><span class="ctrl-key">F1</span> Save</div>
+        <div class="ctrl-item"><span class="ctrl-key">F2</span> Load</div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const romFileInput = document.getElementById('romFile');
-    const fileInfo     = document.getElementById('fileInfo');
-    const fileName     = document.getElementById('fileName');
-    const fileSize     = document.getElementById('fileSize');
-    const playBtn      = document.getElementById('playBtn');
-    const dropZone     = document.getElementById('dropZone');
-
     let selectedFile = null;
+    let emuLoaded    = false;
 
-    romFileInput.addEventListener('change', (e) => {
-      handleFile(e.target.files[0]);
-    });
+    // ---- File handlers ----
+    document.getElementById('romFile').addEventListener('change', e => handleFile(e.target.files[0]));
+    document.getElementById('romFileMobile').addEventListener('change', e => handleFile(e.target.files[0]));
 
-    // Drag & Drop
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('drag-over');
-    });
-    dropZone.addEventListener('drop', (e) => {
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
       e.preventDefault();
       dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      handleFile(e.dataTransfer.files[0]);
     });
 
     function handleFile(file) {
       if (!file) return;
       const ext = file.name.split('.').pop().toLowerCase();
-      if (!['gbc','gb'].includes(ext)) {
-        alert('Please select a .gbc or .gb ROM file!');
-        return;
-      }
+      if (!['gbc','gb'].includes(ext)) { alert('Please select a .gbc or .gb file!'); return; }
       selectedFile = file;
-      fileName.textContent = file.name;
-      fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
-      fileInfo.classList.add('show');
-      playBtn.classList.add('active');
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+      document.getElementById('fileInfo').classList.add('show');
+      document.getElementById('playBtn').classList.add('active');
     }
 
+    // ---- Start game ----
     function startGame() {
       if (!selectedFile) return;
-      const url = URL.createObjectURL(selectedFile);
-      const name = encodeURIComponent(selectedFile.name);
-      window.location.href = `play.html?rom=${url}&name=${name}`;
+
+      // Show game screen
+      document.getElementById('screen-home').style.display = 'none';
+      document.getElementById('screen-game').style.display = 'flex';
+      document.getElementById('gameTitle').textContent = selectedFile.name;
+
+      if (emuLoaded) {
+        // EmulatorJS already loaded — just reload with new game
+        loadEmulator();
+        return;
+      }
+
+      // Load EmulatorJS script once
+      const script = document.createElement('script');
+      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      script.onload = () => { emuLoaded = true; };
+      script.onerror = () => {
+        document.getElementById('loading-overlay').innerHTML =
+          '<div style="color:#ff6fd8;font-family:monospace;text-align:center;padding:20px">❌ Failed to load EmulatorJS.<br/>Check your internet connection.</div>';
+      };
+      document.body.appendChild(script);
+
+      loadEmulator();
+    }
+
+    function loadEmulator() {
+      const blobUrl = URL.createObjectURL(selectedFile);
+
+      window.EJS_player        = '#game-container';
+      window.EJS_core          = 'gambatte';
+      window.EJS_gameUrl       = blobUrl;
+      window.EJS_gameName      = selectedFile.name;
+      window.EJS_color         = '#ff6fd8';
+      window.EJS_startOnLoaded = true;
+      window.EJS_onGameStart   = () => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      };
+    }
+
+    // ---- Back to home ----
+    function goBack() {
+      document.getElementById('screen-game').style.display  = 'none';
+      document.getElementById('screen-home').style.display  = 'flex';
+      // Reset game container
+      const gc = document.getElementById('game-container');
+      gc.innerHTML = '<div id="loading-overlay"><div class="loading-icon">⚙️</div><div class="loading-text">LOADING GAME...</div></div>';
+      emuLoaded = false;
     }
   </script>
 </body>
