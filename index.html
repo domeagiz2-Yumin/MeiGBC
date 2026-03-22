@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GBC Emulator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Nunito', sans-serif;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* ---- Floating bubbles background ---- */
+    .bubbles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bubble {
+      position: absolute;
+      bottom: -100px;
+      border-radius: 50%;
+      opacity: 0.15;
+      animation: rise linear infinite;
+    }
+    .bubble:nth-child(1)  { width:60px;  height:60px;  left:5%;   background:#ff6fd8; animation-duration:8s;  animation-delay:0s;   }
+    .bubble:nth-child(2)  { width:40px;  height:40px;  left:15%;  background:#3bc4f2; animation-duration:10s; animation-delay:1s;   }
+    .bubble:nth-child(3)  { width:80px;  height:80px;  left:25%;  background:#ffdd57; animation-duration:7s;  animation-delay:2s;   }
+    .bubble:nth-child(4)  { width:50px;  height:50px;  left:40%;  background:#a8ff78; animation-duration:11s; animation-delay:0.5s; }
+    .bubble:nth-child(5)  { width:70px;  height:70px;  left:55%;  background:#ff9a9e; animation-duration:9s;  animation-delay:1.5s; }
+    .bubble:nth-child(6)  { width:35px;  height:35px;  left:65%;  background:#f9ca24; animation-duration:12s; animation-delay:3s;   }
+    .bubble:nth-child(7)  { width:90px;  height:90px;  left:75%;  background:#6c5ce7; animation-duration:8s;  animation-delay:2.5s; }
+    .bubble:nth-child(8)  { width:45px;  height:45px;  left:85%;  background:#fd79a8; animation-duration:10s; animation-delay:4s;   }
+    .bubble:nth-child(9)  { width:55px;  height:55px;  left:92%;  background:#00cec9; animation-duration:9s;  animation-delay:1s;   }
+    .bubble:nth-child(10) { width:30px;  height:30px;  left:33%;  background:#e17055; animation-duration:13s; animation-delay:5s;   }
+
+    @keyframes rise {
+      0%   { transform: translateY(0) scale(1);   opacity: 0.15; }
+      50%  { opacity: 0.25; }
+      100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+    }
+
+    /* ---- Header ---- */
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 48px 20px 20px;
+    }
+    .logo-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(18px, 5vw, 36px);
+      background: linear-gradient(90deg, #ff6fd8, #3bc4f2, #ffdd57, #a8ff78, #ff6fd8);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite;
+      text-shadow: none;
+      letter-spacing: 2px;
+    }
+    @keyframes shine {
+      0%   { background-position: 0%; }
+      100% { background-position: 300%; }
+    }
+    .logo-sub {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #c8c8ff;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ---- Card ---- */
+    .card {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 30px auto;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px;
+      padding: 36px 28px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      color: #ffdd57;
+      margin-bottom: 18px;
+      letter-spacing: 1px;
+    }
+
+    /* ---- System badge ---- */
+    .system-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      border-radius: 50px;
+      padding: 8px 20px;
+      font-weight: 900;
+      font-size: 15px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+    }
+    .system-badge span { font-size: 20px; }
+
+    /* ---- Drop Zone ---- */
+    .drop-zone {
+      border: 3px dashed rgba(255,255,255,0.25);
+      border-radius: 18px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #ff6fd8;
+      background: rgba(255,111,216,0.1);
+      transform: scale(1.01);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-icon { font-size: 56px; margin-bottom: 12px; animation: bounce 2s infinite; }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    .drop-text { font-size: 16px; font-weight: 700; color: #e2d9f3; margin-bottom: 6px; }
+    .drop-sub  { font-size: 12px; color: #9b8ec4; }
+
+    /* ---- File info ---- */
+    .file-info {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+      background: rgba(168,255,120,0.1);
+      border: 1px solid rgba(168,255,120,0.3);
+      border-radius: 14px;
+      padding: 14px 18px;
+    }
+    .file-info.show { display: flex; }
+    .file-icon { font-size: 28px; }
+    .file-name { font-weight: 700; font-size: 14px; color: #a8ff78; word-break: break-all; }
+    .file-size { font-size: 11px; color: #78c454; margin-top: 2px; }
+
+    /* ---- Play Button ---- */
+    .play-btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: #1a1a2e;
+      background: linear-gradient(135deg, #ffdd57, #ff6fd8, #3bc4f2);
+      background-size: 200%;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 6px 24px rgba(255,111,216,0.4);
+      animation: btnshine 3s linear infinite;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .play-btn.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(255,111,216,0.6);
+    }
+    @keyframes btnshine {
+      0%   { background-position: 0%; }
+      100% { background-position: 200%; }
+    }
+
+    /* ---- Supported formats ---- */
+    .formats {
+      margin-top: 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .fmt-tag {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #c8c8ff;
+      letter-spacing: 1px;
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background bubbles -->
+  <div class="bubbles">
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-title">🎮 PIXEL VAULT</div>
+    <div class="logo-sub">Game Boy Color Emulator</div>
+  </header>
+
+  <!-- Main Card -->
+  <div class="card">
+    <div class="section-title">▶ SELECT YOUR SYSTEM</div>
+    <div class="system-badge"><span>🟡</span> Game Boy Color</div>
+
+    <div class="section-title">▶ LOAD ROM FILE</div>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="romFile" accept=".gbc,.gb" />
+      <div class="drop-icon">📂</div>
+      <div class="drop-text">Tap to select ROM file</div>
+      <div class="drop-sub">or drag & drop here</div>
+    </div>
+
+    <!-- File Info -->
+    <div class="file-info" id="fileInfo">
+      <div class="file-icon">🎮</div>
+      <div>
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+    </div>
+
+    <!-- Supported formats -->
+    <div class="formats">
+      <div class="fmt-tag">.GBC</div>
+      <div class="fmt-tag">.GB</div>
+    </div>
+
+    <!-- Play Button -->
+    <button class="play-btn" id="playBtn" onclick="startGame()">▶ PLAY NOW</button>
+  </div>
+
+  <footer>PIXEL VAULT • Bring your own ROM • No ROM included</footer>
+
+  <script>
+    const romFileInput = document.getElementById('romFile');
+    const fileInfo     = document.getElementById('fileInfo');
+    const fileName     = document.getElementById('fileName');
+    const fileSize     = document.getElementById('fileSize');
+    const playBtn      = document.getElementById('playBtn');
+    const dropZone     = document.getElementById('dropZone');
+
+    let selectedFile = null;
+
+    romFileInput.addEventListener('change', (e) => {
+      handleFile(e.target.files[0]);
+    });
+
+    // Drag & Drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!['gbc','gb'].includes(ext)) {
+        alert('Please select a .gbc or .gb ROM file!');
+        return;
+      }
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+      fileInfo.classList.add('show');
+      playBtn.classList.add('active');
+    }
+
+    function startGame() {
+      if (!selectedFile) return;
+      const url = URL.createObjectURL(selectedFile);
+      const name = encodeURIComponent(selectedFile.name);
+      window.location.href = `play.html?rom=${url}&name=${name}`;
+    }
+  </script>
+</body>
+</html>

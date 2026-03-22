@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PIXEL VAULT — Playing</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      font-family: 'Nunito', sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ---- Top Bar ---- */
+    .topbar {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .back-btn {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      color: #ff6fd8;
+      text-decoration: none;
+      background: rgba(255,111,216,0.1);
+      border: 1px solid rgba(255,111,216,0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { background: rgba(255,111,216,0.25); }
+    .game-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      color: #ffdd57;
+      text-align: right;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sys-badge {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    /* ---- Emulator Container ---- */
+    .emu-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* EmulatorJS canvas container */
+    #game-container {
+      width: 100%;
+      aspect-ratio: 10/9;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      box-shadow:
+        0 0 0 3px #ff6fd8,
+        0 0 30px rgba(255,111,216,0.3),
+        0 0 60px rgba(59,196,242,0.15);
+      position: relative;
+    }
+
+    /* Loading overlay */
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 10;
+      border-radius: 13px;
+    }
+    .loading-icon {
+      font-size: 48px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .loading-text {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: #ff6fd8;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* ---- Controls Info ---- */
+    .controls-bar {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .ctrl-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #c8c8ff;
+    }
+    .ctrl-key {
+      background: linear-gradient(135deg, #6c5ce7, #a855f7);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-weight: 900;
+      font-size: 11px;
+      color: #fff;
+    }
+
+    /* ---- Error ---- */
+    #error-msg {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      color: #ff6fd8;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      line-height: 2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <a class="back-btn" href="index.html">◀ BACK</a>
+    <div class="game-title" id="gameTitle">Loading...</div>
+    <div class="sys-badge">GBC</div>
+  </div>
+
+  <!-- Emulator -->
+  <div class="emu-wrap">
+    <div id="game-container">
+      <div id="loading-overlay">
+        <div class="loading-icon">⚙️</div>
+        <div class="loading-text">LOADING GAME...</div>
+      </div>
+    </div>
+
+    <div id="error-msg">
+      ❌ Could not load ROM.<br/>
+      Please go back and try again.
+    </div>
+
+    <!-- Keyboard Controls Info -->
+    <div class="controls-bar">
+      <div class="ctrl-item"><span class="ctrl-key">Arrow Keys</span> D-Pad</div>
+      <div class="ctrl-item"><span class="ctrl-key">Z</span> A Button</div>
+      <div class="ctrl-item"><span class="ctrl-key">X</span> B Button</div>
+      <div class="ctrl-item"><span class="ctrl-key">Enter</span> Start</div>
+      <div class="ctrl-item"><span class="ctrl-key">Shift</span> Select</div>
+      <div class="ctrl-item"><span class="ctrl-key">F1</span> Save State</div>
+      <div class="ctrl-item"><span class="ctrl-key">F2</span> Load State</div>
+    </div>
+  </div>
+
+  <!-- EmulatorJS CDN -->
+  <script>
+    // Get ROM URL from query string
+    const params  = new URLSearchParams(window.location.search);
+    const romUrl  = params.get('rom');
+    const romName = decodeURIComponent(params.get('name') || 'Game');
+
+    document.getElementById('gameTitle').textContent = romName;
+
+    if (!romUrl) {
+      document.getElementById('loading-overlay').style.display = 'none';
+      document.getElementById('error-msg').style.display = 'block';
+    } else {
+      // EmulatorJS config
+      window.EJS_player      = '#game-container';
+      window.EJS_core        = 'gambatte';   // GBC core
+      window.EJS_gameUrl     = romUrl;
+      window.EJS_gameName    = romName;
+      window.EJS_color       = '#ff6fd8';
+      window.EJS_startOnLoaded = true;
+      window.EJS_onGameStart = () => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      };
+
+      // Load EmulatorJS
+      const script = document.createElement('script');
+      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      script.onerror = () => {
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('error-msg').style.display = 'block';
+      };
+      document.body.appendChild(script);
+    }
+  </script>
+</body>
+</html>
