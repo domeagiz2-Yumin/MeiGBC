@@ -444,24 +444,29 @@
       document.getElementById('screen-game').style.display = 'flex';
       document.getElementById('gameTitle').textContent = selectedFile.name;
 
-      // Read file as base64 so EmulatorJS can use it directly (no CORS issue)
+      // Use ArrayBuffer → Blob URL (works on same page, no CORS issue)
       const reader = new FileReader();
       reader.onload = function(e) {
-        const base64 = e.target.result; // data:application/octet-stream;base64,...
+        const blob    = new Blob([e.target.result], { type: 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(blob);
 
         // Set ALL configs BEFORE loading script
         window.EJS_player        = '#game-container';
-        window.EJS_core          = 'gambatte';
-        window.EJS_gameUrl       = base64;
-        window.EJS_gameName      = selectedFile.name;
+        window.EJS_core          = 'gbc';
+        window.EJS_gameUrl       = blobUrl;
+        window.EJS_gameName      = selectedFile.name.replace(/\.[^.]+$/, '') + '.gbc';
         window.EJS_color         = '#ff6fd8';
         window.EJS_startOnLoaded = true;
         window.EJS_onGameStart   = () => {
           document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        // Load script AFTER configs are set
+        // Remove old script if any, then reload fresh
+        const old = document.getElementById('ejs-script');
+        if (old) old.remove();
+
         const script = document.createElement('script');
+        script.id  = 'ejs-script';
         script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
         script.onerror = () => {
           document.getElementById('loading-overlay').innerHTML =
@@ -469,7 +474,7 @@
         };
         document.body.appendChild(script);
       };
-      reader.readAsDataURL(selectedFile);
+      reader.readAsArrayBuffer(selectedFile);
     }
 
     // ---- Back to home ----
