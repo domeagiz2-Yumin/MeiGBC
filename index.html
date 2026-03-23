@@ -96,7 +96,6 @@
       display:flex; align-items:center; justify-content:center; gap:10px;
     }
     .pick-btn:active { transform:scale(0.97); }
-    .pick-btn input[type="file"] { display:none; }
     .pick-sub { font-size:12px; color:#9b8ec4; }
     @keyframes btnshine { 0%{background-position:0%} 100%{background-position:200%} }
 
@@ -127,7 +126,11 @@
     .play-btn:hover  { transform:translateY(-2px); }
 
     /* ===== GAME SCREEN ===== */
-    #screen-game { display:none; position:relative; z-index:1; flex-direction:column; align-items:center; min-height:100vh; }
+    #screen-game {
+      display:none; position:relative; z-index:1;
+      flex-direction:column; align-items:center;
+      min-height:100vh;
+    }
 
     .topbar {
       width:100%; max-width:520px;
@@ -135,6 +138,7 @@
       padding:14px 18px;
       background:rgba(255,255,255,0.05);
       border-bottom:1px solid rgba(255,255,255,0.08);
+      flex-shrink:0;
     }
     .back-btn {
       font-family:'Press Start 2P',cursive; font-size:9px; color:#ff6fd8;
@@ -145,35 +149,40 @@
     .game-title { font-family:'Press Start 2P',cursive; font-size:8px; color:#ffdd57; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .sys-badge { background:linear-gradient(135deg,#a855f7,#ec4899); border-radius:20px; padding:4px 10px; font-size:10px; font-weight:900; }
 
-    .emu-wrap { width:100%; max-width:520px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    .emu-wrap {
+      width:100%; max-width:520px;
+      padding:16px;
+      flex:1;
+      display:flex; flex-direction:column; align-items:center; gap:14px;
+    }
 
-    /* Canvas */
-    .canvas-wrap {
-      width:100%; aspect-ratio:10/9;
-      background:#000; border-radius:16px; overflow:hidden;
+    /* Game container — EmulatorJS fills this */
+    #game-container {
+      width:100%;
+      aspect-ratio:10/9;
+      background:#000;
+      border-radius:16px;
+      overflow:hidden;
       box-shadow:0 0 0 3px #ff6fd8, 0 0 30px rgba(255,111,216,0.3);
-      display:flex; align-items:center; justify-content:center;
       position:relative;
     }
-    #gbc-canvas { width:100%; height:100%; image-rendering:pixelated; }
 
-    /* Loading / Error overlay */
-    .overlay {
+    /* Loading overlay */
+    #loading-overlay {
       position:absolute; inset:0; background:#000;
       display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
-      border-radius:13px;
+      border-radius:13px; z-index:10;
     }
-    .overlay.hide { display:none; }
+    #loading-overlay.hide { display:none; }
     .loading-icon { font-size:48px; animation:spin 1s linear infinite; }
     @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
     .loading-text { font-family:'Press Start 2P',cursive; font-size:10px; color:#ff6fd8; animation:pulse 1s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .error-text { font-family:'Press Start 2P',cursive; font-size:10px; color:#ff6fd8; text-align:center; line-height:2; padding:20px; }
 
-    /* Controls */
-    .controls-bar { width:100%; background:rgba(255,255,255,0.05); border-radius:14px; padding:14px 18px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-    .ctrl-item { display:flex; align-items:center; gap:6px; font-size:11px; color:#c8c8ff; }
-    .ctrl-key { background:linear-gradient(135deg,#6c5ce7,#a855f7); border-radius:6px; padding:2px 8px; font-weight:900; font-size:11px; }
+    /* Progress bar */
+    .progress-wrap { width:80%; background:rgba(255,255,255,0.1); border-radius:8px; overflow:hidden; }
+    .progress-bar  { height:6px; width:0%; background:linear-gradient(90deg,#ff6fd8,#3bc4f2); border-radius:8px; transition:width 0.3s; }
 
     footer { position:relative; z-index:1; text-align:center; padding:20px; font-size:11px; color:rgba(255,255,255,0.3); }
   </style>
@@ -198,6 +207,7 @@
 
     <div class="section-title">▶ LOAD ROM FILE</div>
 
+    <!-- Desktop drag & drop -->
     <div class="drop-zone" id="dropZone">
       <input type="file" id="romFile" accept=".gbc,.gb" />
       <div class="drop-icon">📂</div>
@@ -205,10 +215,11 @@
       <div class="drop-sub">.gbc / .gb files only</div>
     </div>
 
+    <!-- Mobile button -->
     <div class="mobile-pick">
-      <label class="pick-btn">
+      <label class="pick-btn" id="mobilePickLabel">
         <span>📂</span> Choose ROM File
-        <input type="file" id="romFileMobile" accept=".gbc,.gb" />
+        <input type="file" id="romFileMobile" accept=".gbc,.gb" style="display:none" />
       </label>
       <div class="pick-sub">.gbc / .gb — stored on your device</div>
     </div>
@@ -241,32 +252,44 @@
   </div>
 
   <div class="emu-wrap">
-    <div class="canvas-wrap">
-      <canvas id="gbc-canvas"></canvas>
-      <div class="overlay" id="overlay">
+    <!-- EmulatorJS will inject itself into #game-container -->
+    <div id="game-container">
+      <div id="loading-overlay">
         <div class="loading-icon">⚙️</div>
-        <div class="loading-text" id="overlay-text">LOADING...</div>
+        <div class="loading-text" id="loadingText">READING ROM...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
       </div>
-    </div>
-
-    <div class="controls-bar">
-      <div class="ctrl-item"><span class="ctrl-key">Arrows</span> D-Pad</div>
-      <div class="ctrl-item"><span class="ctrl-key">Z</span> A</div>
-      <div class="ctrl-item"><span class="ctrl-key">X</span> B</div>
-      <div class="ctrl-item"><span class="ctrl-key">Enter</span> Start</div>
-      <div class="ctrl-item"><span class="ctrl-key">Shift</span> Select</div>
     </div>
   </div>
 </div>
 
-<script type="module">
-  import WasmBoy from 'https://cdn.jsdelivr.net/npm/wasmboy@0.7.1/+esm';
-
+<script>
+  // ── File selection ──────────────────────────────────────────────
   let selectedFile = null;
 
-  // File handlers
+  function handleFile(file) {
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['gbc', 'gb'].includes(ext)) {
+      alert('Please select a .gbc or .gb file!');
+      return;
+    }
+    selectedFile = file;
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('fileInfo').classList.add('show');
+    document.getElementById('playBtn').classList.add('active');
+  }
+
   document.getElementById('romFile').addEventListener('change', e => handleFile(e.target.files[0]));
   document.getElementById('romFileMobile').addEventListener('change', e => handleFile(e.target.files[0]));
+
+  // Mobile label click → trigger input
+  document.getElementById('mobilePickLabel').addEventListener('click', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+      document.getElementById('romFileMobile').click();
+    }
+  });
 
   const dropZone = document.getElementById('dropZone');
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -277,71 +300,79 @@
     handleFile(e.dataTransfer.files[0]);
   });
 
-  function handleFile(file) {
-    if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['gbc','gb'].includes(ext)) { alert('Please select a .gbc or .gb file!'); return; }
-    selectedFile = file;
-    document.getElementById('fileName').textContent = file.name;
-    document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
-    document.getElementById('fileInfo').classList.add('show');
-    document.getElementById('playBtn').classList.add('active');
-  }
-
-  // Make startGame accessible globally
-  window.startGame = async function() {
+  // ── Start game ──────────────────────────────────────────────────
+  function startGame() {
     if (!selectedFile) return;
 
+    // Switch to game screen
     document.getElementById('screen-home').style.display = 'none';
     document.getElementById('screen-game').style.display = 'flex';
-    document.getElementById('gameTitle').textContent = selectedFile.name;
+    document.getElementById('gameTitle').textContent = selectedFile.name.replace(/\.(gb|gbc)$/i, '');
 
-    const overlay     = document.getElementById('overlay');
-    const overlayText = document.getElementById('overlay-text');
-    const canvas      = document.getElementById('gbc-canvas');
+    const loadingText = document.getElementById('loadingText');
+    const progressBar = document.getElementById('progressBar');
 
-    overlay.classList.remove('hide');
-    overlayText.textContent = 'LOADING...';
+    loadingText.textContent = 'READING ROM...';
+    progressBar.style.width = '20%';
 
-    try {
-      // Config WasmBoy
-      await WasmBoy.config({
-        headless: false,
-        useGbcWhenOptional: true,
-        isAudioEnabled: true,
-        gameboyFPSCap: 60,
-        updateGraphicsCallback: false,
-        updateAudioCallback: false,
-      }, canvas);
+    // Convert ROM to base64 data URL — avoids CORS issues with EmulatorJS CDN workers
+    const reader = new FileReader();
 
-      // Read file → Uint8Array
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const romData     = new Uint8Array(arrayBuffer);
+    reader.onprogress = function(e) {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 40) + 20;
+        progressBar.style.width = pct + '%';
+      }
+    };
 
-      overlayText.textContent = 'STARTING GAME...';
+    reader.onload = function(e) {
+      progressBar.style.width = '70%';
+      loadingText.textContent = 'LOADING EMULATOR...';
 
-      await WasmBoy.loadROM(romData);
-      await WasmBoy.play();
+      const romDataUrl = e.target.result; // data:application/octet-stream;base64,...
 
-      overlay.classList.add('hide');
+      // EmulatorJS configuration
+      window.EJS_player        = '#game-container';
+      window.EJS_core          = 'gambatte';          // Game Boy Color core
+      window.EJS_gameUrl       = romDataUrl;           // base64 data URL — no CORS issue
+      window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
+      window.EJS_color         = '#ff6fd8';
+      window.EJS_startOnLoaded = true;
+      window.EJS_VirtualGamepad = true;               // Touch controls for mobile
 
-    } catch(err) {
-      console.error(err);
-      overlay.innerHTML = `<div class="error-text">❌ Error loading game.<br/>${err.message}</div>`;
-    }
-  };
+      window.EJS_onGameStart = function() {
+        progressBar.style.width = '100%';
+        setTimeout(function() {
+          document.getElementById('loading-overlay').classList.add('hide');
+        }, 300);
+      };
 
-  window.goBack = async function() {
-    try { await WasmBoy.pause(); } catch(e) {}
-    document.getElementById('screen-game').style.display = 'none';
-    document.getElementById('screen-home').style.display  = 'flex';
-    // Reset overlay
-    document.getElementById('overlay').className = 'overlay';
-    document.getElementById('overlay').innerHTML = `
-      <div class="loading-icon">⚙️</div>
-      <div class="loading-text" id="overlay-text">LOADING...</div>
-    `;
-  };
+      // Load EmulatorJS loader
+      const script = document.createElement('script');
+      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      script.onerror = function() {
+        showError('Could not load emulator.<br/>Check internet connection.');
+      };
+      document.body.appendChild(script);
+    };
+
+    reader.onerror = function() {
+      showError('Could not read ROM file.');
+    };
+
+    reader.readAsDataURL(selectedFile);
+  }
+
+  function showError(msg) {
+    document.getElementById('loading-overlay').innerHTML =
+      '<div class="error-text">❌ ' + msg + '</div>';
+  }
+
+  // ── Go back ─────────────────────────────────────────────────────
+  // Reload page to fully reset EmulatorJS state
+  function goBack() {
+    window.location.reload();
+  }
 </script>
 </body>
 </html>
