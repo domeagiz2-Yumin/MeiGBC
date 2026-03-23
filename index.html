@@ -312,55 +312,40 @@
     const loadingText = document.getElementById('loadingText');
     const progressBar = document.getElementById('progressBar');
 
-    loadingText.textContent = 'READING ROM...';
+    loadingText.textContent = 'LOADING EMULATOR...';
     progressBar.style.width = '20%';
 
-    // Convert ROM to base64 data URL — avoids CORS issues with EmulatorJS CDN workers
-    const reader = new FileReader();
+    // Blob URL — works on GitHub Pages (HTTPS) because EmulatorJS fetches ROM
+    // from the main thread, not a CDN worker, so same-origin blob URLs are fine
+    const romUrl = URL.createObjectURL(selectedFile);
 
-    reader.onprogress = function(e) {
-      if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 40) + 20;
-        progressBar.style.width = pct + '%';
-      }
+    progressBar.style.width = '50%';
+    loadingText.textContent = 'LOADING EMULATOR...';
+
+    // EmulatorJS configuration
+    window.EJS_player         = '#game-container';
+    window.EJS_core           = 'gambatte';   // Game Boy Color core
+    window.EJS_gameUrl        = romUrl;
+    window.EJS_pathtodata     = 'https://cdn.emulatorjs.org/stable/data/';
+    window.EJS_color          = '#ff6fd8';
+    window.EJS_startOnLoaded  = true;
+    window.EJS_VirtualGamepad = true;         // Touch controls for mobile
+
+    window.EJS_onGameStart = function() {
+      progressBar.style.width = '100%';
+      URL.revokeObjectURL(romUrl);            // free memory after loaded
+      setTimeout(function() {
+        document.getElementById('loading-overlay').classList.add('hide');
+      }, 300);
     };
 
-    reader.onload = function(e) {
-      progressBar.style.width = '70%';
-      loadingText.textContent = 'LOADING EMULATOR...';
-
-      const romDataUrl = e.target.result; // data:application/octet-stream;base64,...
-
-      // EmulatorJS configuration
-      window.EJS_player        = '#game-container';
-      window.EJS_core          = 'gambatte';          // Game Boy Color core
-      window.EJS_gameUrl       = romDataUrl;           // base64 data URL — no CORS issue
-      window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
-      window.EJS_color         = '#ff6fd8';
-      window.EJS_startOnLoaded = true;
-      window.EJS_VirtualGamepad = true;               // Touch controls for mobile
-
-      window.EJS_onGameStart = function() {
-        progressBar.style.width = '100%';
-        setTimeout(function() {
-          document.getElementById('loading-overlay').classList.add('hide');
-        }, 300);
-      };
-
-      // Load EmulatorJS loader
-      const script = document.createElement('script');
-      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-      script.onerror = function() {
-        showError('Could not load emulator.<br/>Check internet connection.');
-      };
-      document.body.appendChild(script);
+    // Load EmulatorJS loader
+    const script = document.createElement('script');
+    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+    script.onerror = function() {
+      showError('Could not load emulator.<br/>Check internet connection.');
     };
-
-    reader.onerror = function() {
-      showError('Could not read ROM file.');
-    };
-
-    reader.readAsDataURL(selectedFile);
+    document.body.appendChild(script);
   }
 
   function showError(msg) {
