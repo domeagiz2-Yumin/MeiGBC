@@ -366,11 +366,14 @@
     }
     #game-container-mobile{width:100%;aspect-ratio:10/9;background:#000;overflow:hidden;box-shadow:0 0 0 3px #ff6fd8,0 0 20px rgba(255,111,216,.4);position:relative;}
 
-    /* Mobile gamepad */
+    /* Mobile gamepad — responsive (clamp scales ปุ่มตามจอเล็ก/ใหญ่) */
     .mobile-gamepad{
       flex:1; width:100%; max-width:520px;
       display:flex; flex-direction:column; align-items:center; justify-content:space-evenly;
-      padding:6px 16px 8px;
+      padding:6px 20px 8px;
+      /* --dpad-cell / --ab-size ให้ style อื่นเรียกใช้ต่อได้ */
+      --dpad-cell: clamp(44px, 13vw, 56px);
+      --ab-size: clamp(58px, 17vw, 76px);
     }
 
     .speed-row{display:flex;gap:18px;align-items:center;justify-content:center;}
@@ -379,10 +382,10 @@
     .btn-speed.slow{border-color:#3bc4f2;color:#3bc4f2;}
     .btn-speed:active,.btn-speed.pressed{transform:scale(.92);background:rgba(255,255,255,.2);}
 
-    .main-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
+    .main-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 8px;gap:16px;}
 
-    .dpad{display:grid;grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px 56px;gap:4px;}
-    .dpad-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:rgba(255,255,255,.7);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:all .1s;}
+    .dpad{display:grid;grid-template-columns:var(--dpad-cell) var(--dpad-cell) var(--dpad-cell);grid-template-rows:var(--dpad-cell) var(--dpad-cell) var(--dpad-cell);gap:4px;}
+    .dpad-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:rgba(255,255,255,.7);font-size:clamp(18px, 5.5vw, 22px);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:all .1s;}
     .dpad-btn:active,.dpad-btn.pressed{background:rgba(255,111,216,.35);border-color:#ff6fd8;color:#fff;}
     .dpad-empty{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;}
     .dpad-center{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;}
@@ -640,21 +643,25 @@
     }
 
     .ab-group{display:flex;align-items:flex-start;}
-    .ab-top{display:flex;gap:18px;align-items:flex-start;}
-    .btn-action{border-radius:50%;border:none;font-family:'Press Start 2P',cursive;font-size:18px;font-weight:900;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;transition:all .1s;}
-    .btn-a{width:76px;height:76px;background:linear-gradient(135deg,#ff6fd8,#e040b0);color:#fff;box-shadow:0 6px 20px rgba(255,111,216,.55);}
-    .btn-b{width:76px;height:76px;background:linear-gradient(135deg,#3bc4f2,#1a9fd4);color:#fff;box-shadow:0 6px 16px rgba(59,196,242,.45);margin-top:28px;}
+    .ab-top{display:flex;gap:clamp(10px, 3vw, 18px);align-items:flex-start;}
+    .btn-action{border-radius:50%;border:none;font-family:'Press Start 2P',cursive;font-size:clamp(14px, 4vw, 18px);font-weight:900;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+    .btn-a{width:var(--ab-size);height:var(--ab-size);background:linear-gradient(135deg,#ff6fd8,#e040b0);color:#fff;box-shadow:0 6px 20px rgba(255,111,216,.55);}
+    .btn-b{width:var(--ab-size);height:var(--ab-size);background:linear-gradient(135deg,#3bc4f2,#1a9fd4);color:#fff;box-shadow:0 6px 16px rgba(59,196,242,.45);margin-top:clamp(18px, 5vw, 28px);}
     .btn-action:active,.btn-action.pressed{transform:scale(.86);}
 
     .mid-row{display:flex;gap:28px;align-items:center;justify-content:center;}
     .btn-mid{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.7);font-family:'Press Start 2P',cursive;font-size:7px;padding:8px 16px;cursor:pointer;user-select:none;letter-spacing:1px;transition:all .1s;}
     .btn-mid:active,.btn-mid.pressed{background:rgba(255,111,216,.3);border-color:#ff6fd8;color:#fff;transform:scale(.93);}
 
-    /* Hide ALL EJS overlay UI — gamepad + menu button */
+    /* Hide ALL EJS overlay UI — gamepad + menu button
+       ขยาย selector ครอบทุก class ที่ EJS อาจสร้าง (แก้ปัญหา EJS gamepad โผล่แว่บก่อน JS hide) */
     .ejs_virtualGamepad,.ejs_gamepad,.ejs_controls_layer,
     .ejs_menu_button,.ejs_menu,.ejs_menuContainer,
-    [class*="ejs_menu"],[class*="ejs_btn"],[class*="ejs_bar"] {
+    [class*="ejs_menu"],[class*="ejs_btn"],[class*="ejs_bar"],
+    [class*="ejs_gamepad"],[class*="ejs_control"],
+    [class*="ejs_touch"],[class*="ejs_pad"] {
       display:none!important; visibility:hidden!important;
+      opacity:0!important; pointer-events:none!important;
     }
 
     /* ════════════════════════════
