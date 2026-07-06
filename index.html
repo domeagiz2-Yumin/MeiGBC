@@ -288,15 +288,8 @@
     }
 
     /* Loading overlay */
-    .loading-overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:99999;}
+    .loading-overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:999;}
     .loading-overlay.hide{display:none;}
-    /* Nuclear (temp): ระหว่าง .loading — ซ่อนทุก child ยกเว้น loading overlay
-       กัน EJS gamepad โผล่ก่อน sweep/observer จับได้
-       (ใช้ visibility ไม่ใช่ display กัน layout shift + reflow) */
-    #game-container-pc.loading > *:not(.loading-overlay),
-    #game-container-mobile.loading > *:not(.loading-overlay) {
-      visibility: hidden !important;
-    }
     .loading-icon{font-size:36px;animation:spin 1s linear infinite;}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
     .loading-text{font-family:'Press Start 2P',cursive;font-size:8px;color:#ff6fd8;animation:pulse 1s ease-in-out infinite;}
@@ -670,20 +663,12 @@
       display:none!important; visibility:hidden!important;
       opacity:0!important; pointer-events:none!important;
     }
-    /* Master rule: ทุก class ที่มี "ejs_" ในเกม container = hide (ยกเว้น canvas)
-       รวม ejs_button ที่ sweep เดิมจับไม่ได้ (ไม่มี keyword pad/control/gamepad ในชื่อ) */
-    #game-container-pc [class*="ejs_"]:not(canvas),
-    #game-container-mobile [class*="ejs_"]:not(canvas) {
-      display:none!important; visibility:hidden!important;
-      opacity:0!important; pointer-events:none!important;
-    }
-    /* 🏠 บ้านๆ rule: ทุก direct child ใน game container ยกเว้น canvas + loading-overlay = hide
-       ไม่สนใจว่า class ชื่ออะไร — ถ้าอยู่ตำแหน่งนี้และไม่ใช่ canvas/loading = ต้องหาย
-       (จับ EJS UI ที่ inject มาไม่ว่าจะใช้ class ชื่ออะไร) */
-    #game-container-pc > *:not(canvas):not(.loading-overlay),
-    #game-container-mobile > *:not(canvas):not(.loading-overlay) {
-      display:none!important;
-    }
+    /* หมายเหตุ: ก่อนหน้าเคยลอง approach หลายอย่างที่ทำให้จอดำ:
+       1. #container > *:not(canvas):not(.loading-overlay) { display:none }
+          → EJS wrap canvas → hide wrapper → canvas หาย
+       2. :has(canvas) + JS hideCanvasSiblings → จอดำใน PC
+       3. [class*="ejs_"]:not(canvas) → canvas wrapper อาจมี "ejs_" ในชื่อ → canvas หาย
+       รอ approach อื่นที่ปลอดภัยกว่า */
 
     /* ════════════════════════════
        SETTINGS PANEL (slide from right)
@@ -2468,9 +2453,6 @@ async function startGame() {
   // Reset loading overlay — ต้อง show ครอบ EJS decompress UI ทุกครั้ง (กันเกมก่อนหน้าหลบ .hide ค้าง)
   const _overlay = document.querySelector('#' + containerId + ' .loading-overlay');
   if (_overlay) _overlay.classList.remove('hide');
-  // Add .loading class → CSS ซ่อนทุก child ยกเว้น loading-overlay (nuclear defense)
-  const _container = document.getElementById(containerId);
-  if (_container) _container.classList.add('loading');
 
   const romUrl = URL.createObjectURL(selectedFile);
 
@@ -2482,9 +2464,6 @@ async function startGame() {
   window.EJS_color         = currentMode === 'pc' ? '#3bc4f2' : '#ff6fd8';
   window.EJS_startOnLoaded = true;
   window.EJS_VirtualGamepad = false;
-  window.EJS_disableGamepad = true;                    // เผื่อ EJS version ใหม่ใช้ตัวนี้
-  window.EJS_settings = window.EJS_settings || {};
-  window.EJS_settings.virtualGamepad = false;          // เผื่อ EJS version อื่นใช้ nested option
   window.EJS_saveStateOnClose = true;
 
 
@@ -2505,16 +2484,11 @@ async function startGame() {
       setTimeout(loadVolumeForMode, 1500);
       // start auto-save (เริ่มจับ delta ทุก 2 วิ — แต่จะ toast เฉพาะตอน SRAM เปลี่ยนจริง)
       startSRAMAutoSave(window.EJS_gameID);
-      // Loading overlay หายทีหลัง — เพิ่ม delay ให้ EJS render ทุก UI element เสร็จก่อน
-      // Sweep + observer จะได้จับ element ทั้งหมด (2500ms = buffer มากกว่าเดิม)
+      // Loading overlay หายทีหลัง — รอ forceHideEJSGamepad inner sweep settle
       setTimeout(function() {
         const overlay = document.querySelector('#' + containerId + ' .loading-overlay');
         if (overlay) overlay.classList.add('hide');
-        // Remove .loading class → CSS Nuclear หายไป → canvas show ได้ปกติ
-        // (EJS gamepad ที่โดน hide จาก sweep/observer ยังหายอยู่)
-        const container = document.getElementById(containerId);
-        if (container) container.classList.remove('loading');
-      }, 2500);
+      }, 1700);
     }, 400);
   };
 
@@ -2532,13 +2506,11 @@ async function startGame() {
 
 // ── Hide EJS gamepad ─────────────────────────────────
 // Helper: hide element ถ้าเข้าข่าย EJS UI
-// เพิ่ม 'ejs_' + 'button' — จับ class ejs_button (ปุ่ม A/B/Select/Start ของ EJS) ที่ sweep เดิมพลาด
 function _hideIfEJSUI(el) {
   if (!el || el.nodeType !== 1 || el.tagName === 'CANVAS') return;
   const cls = (el.className || '').toString().toLowerCase();
-  if (cls.includes('ejs_') || cls.includes('pad') || cls.includes('control') ||
-      cls.includes('gamepad') || cls.includes('menu') || cls.includes('bar') ||
-      cls.includes('button')) {
+  if (cls.includes('pad') || cls.includes('control') || cls.includes('gamepad') ||
+      cls.includes('menu') || cls.includes('bar')) {
     el.style.setProperty('display','none','important');
     el.style.setProperty('visibility','hidden','important');
   }
