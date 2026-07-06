@@ -2463,8 +2463,7 @@ async function startGame() {
     if (prog) prog.style.width = '100%';
     URL.revokeObjectURL(romUrl);
     setTimeout(function() {
-      const overlay = document.querySelector('#' + containerId + ' .loading-overlay');
-      if (overlay) overlay.classList.add('hide');
+      // Fix: hide EJS ก่อน — ห้าม hide loading overlay ก่อน ไม่งั้น EJS gamepad โผล่แว่บ
       forceHideEJSGamepad(containerId);
       if (currentMode === 'mobile') initMobileGamepad();
       if (currentMode === 'pc')     initPCKeys();
@@ -2476,6 +2475,12 @@ async function startGame() {
       setTimeout(loadVolumeForMode, 1500);
       // start auto-save (เริ่มจับ delta ทุก 2 วิ — แต่จะ toast เฉพาะตอน SRAM เปลี่ยนจริง)
       startSRAMAutoSave(window.EJS_gameID);
+      // Loading overlay หายทีหลัง — รอ forceHideEJSGamepad inner 600ms + buffer 150ms
+      // (loading overlay จะครอบ EJS gamepad ที่โผล่แว่บ ผู้ใช้เห็นแต่ loading icon เท่านั้น)
+      setTimeout(function() {
+        const overlay = document.querySelector('#' + containerId + ' .loading-overlay');
+        if (overlay) overlay.classList.add('hide');
+      }, 750);
     }, 400);
   };
 
@@ -4141,4 +4146,3 @@ function toggleControls() {
 </script>
 </body>
 </html>
-
