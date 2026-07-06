@@ -290,6 +290,13 @@
     /* Loading overlay */
     .loading-overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:99999;}
     .loading-overlay.hide{display:none;}
+    /* Nuclear (temp): ระหว่าง .loading — ซ่อนทุก child ยกเว้น loading overlay
+       กัน EJS gamepad โผล่ก่อน sweep/observer จับได้
+       (ใช้ visibility ไม่ใช่ display กัน layout shift + reflow) */
+    #game-container-pc.loading > *:not(.loading-overlay),
+    #game-container-mobile.loading > *:not(.loading-overlay) {
+      visibility: hidden !important;
+    }
     .loading-icon{font-size:36px;animation:spin 1s linear infinite;}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
     .loading-text{font-family:'Press Start 2P',cursive;font-size:8px;color:#ff6fd8;animation:pulse 1s ease-in-out infinite;}
@@ -2447,6 +2454,9 @@ async function startGame() {
   // Reset loading overlay — ต้อง show ครอบ EJS decompress UI ทุกครั้ง (กันเกมก่อนหน้าหลบ .hide ค้าง)
   const _overlay = document.querySelector('#' + containerId + ' .loading-overlay');
   if (_overlay) _overlay.classList.remove('hide');
+  // Add .loading class → CSS ซ่อนทุก child ยกเว้น loading-overlay (nuclear defense)
+  const _container = document.getElementById(containerId);
+  if (_container) _container.classList.add('loading');
 
   const romUrl = URL.createObjectURL(selectedFile);
 
@@ -2458,6 +2468,9 @@ async function startGame() {
   window.EJS_color         = currentMode === 'pc' ? '#3bc4f2' : '#ff6fd8';
   window.EJS_startOnLoaded = true;
   window.EJS_VirtualGamepad = false;
+  window.EJS_disableGamepad = true;                    // เผื่อ EJS version ใหม่ใช้ตัวนี้
+  window.EJS_settings = window.EJS_settings || {};
+  window.EJS_settings.virtualGamepad = false;          // เผื่อ EJS version อื่นใช้ nested option
   window.EJS_saveStateOnClose = true;
 
 
@@ -2478,12 +2491,16 @@ async function startGame() {
       setTimeout(loadVolumeForMode, 1500);
       // start auto-save (เริ่มจับ delta ทุก 2 วิ — แต่จะ toast เฉพาะตอน SRAM เปลี่ยนจริง)
       startSRAMAutoSave(window.EJS_gameID);
-      // Loading overlay หายทีหลัง — รอ sweep หลายรอบของ forceHideEJSGamepad settle
-      // (loading overlay z-index:99999 จะครอบ EJS ทุก case ตอนกำลัง render)
+      // Loading overlay หายทีหลัง — เพิ่ม delay ให้ EJS render ทุก UI element เสร็จก่อน
+      // Sweep + observer จะได้จับ element ทั้งหมด (2500ms = buffer มากกว่าเดิม)
       setTimeout(function() {
         const overlay = document.querySelector('#' + containerId + ' .loading-overlay');
         if (overlay) overlay.classList.add('hide');
-      }, 1700);
+        // Remove .loading class → CSS Nuclear หายไป → canvas show ได้ปกติ
+        // (EJS gamepad ที่โดน hide จาก sweep/observer ยังหายอยู่)
+        const container = document.getElementById(containerId);
+        if (container) container.classList.remove('loading');
+      }, 2500);
     }, 400);
   };
 
