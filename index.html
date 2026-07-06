@@ -150,12 +150,12 @@
       display:flex; align-items:center; gap:12px; margin-bottom:4px;
     }
     .back-text-btn {
-      font-family:'Press Start 2P',cursive; font-size:13px;
+      font-family:'Press Start 2P',cursive; font-size:9px;
       color:#ff6fd8; background:rgba(255,111,216,.22);
-      border:3px solid rgba(255,111,216,.7); border-radius:12px;
-      cursor:pointer; padding:13px 22px; letter-spacing:2px;
-      text-shadow:0 2px 4px rgba(0,0,0,.5); font-weight:bold;
-      box-shadow:0 4px 18px rgba(255,111,216,.35),inset 0 1px 0 rgba(255,255,255,.15);
+      border:2px solid rgba(255,111,216,.7); border-radius:10px;
+      cursor:pointer; padding:8px 14px; letter-spacing:1.5px;
+      text-shadow:0 1px 2px rgba(0,0,0,.5); font-weight:bold;
+      box-shadow:0 3px 12px rgba(255,111,216,.3),inset 0 1px 0 rgba(255,255,255,.15);
       transition:all .15s;
     }
     .back-text-btn:hover {
@@ -288,7 +288,7 @@
     }
 
     /* Loading overlay */
-    .loading-overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:999;}
+    .loading-overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:99999;}
     .loading-overlay.hide{display:none;}
     .loading-icon{font-size:36px;animation:spin 1s linear infinite;}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -2475,12 +2475,12 @@ async function startGame() {
       setTimeout(loadVolumeForMode, 1500);
       // start auto-save (เริ่มจับ delta ทุก 2 วิ — แต่จะ toast เฉพาะตอน SRAM เปลี่ยนจริง)
       startSRAMAutoSave(window.EJS_gameID);
-      // Loading overlay หายทีหลัง — รอ forceHideEJSGamepad inner 600ms + buffer 150ms
-      // (loading overlay จะครอบ EJS gamepad ที่โผล่แว่บ ผู้ใช้เห็นแต่ loading icon เท่านั้น)
+      // Loading overlay หายทีหลัง — รอ sweep หลายรอบของ forceHideEJSGamepad settle
+      // (loading overlay z-index:99999 จะครอบ EJS ทุก case ตอนกำลัง render)
       setTimeout(function() {
         const overlay = document.querySelector('#' + containerId + ' .loading-overlay');
         if (overlay) overlay.classList.add('hide');
-      }, 750);
+      }, 1700);
     }, 400);
   };
 
@@ -2497,20 +2497,40 @@ async function startGame() {
 }
 
 // ── Hide EJS gamepad ─────────────────────────────────
+// Helper: hide element ถ้าเข้าข่าย EJS UI
+function _hideIfEJSUI(el) {
+  if (!el || el.nodeType !== 1 || el.tagName === 'CANVAS') return;
+  const cls = (el.className || '').toString().toLowerCase();
+  if (cls.includes('pad')||cls.includes('control')||cls.includes('gamepad')||cls.includes('menu')||cls.includes('bar')) {
+    el.style.setProperty('display','none','important');
+    el.style.setProperty('visibility','hidden','important');
+  }
+}
+
 function forceHideEJSGamepad(containerId) {
   const style = document.createElement('style');
   style.textContent = `.ejs_virtualGamepad,.ejs_gamepad,.ejs_controls_layer,[class*="ejs_pad"],[class*="ejs_control"]{display:none!important;visibility:hidden!important;}`;
   document.head.appendChild(style);
-  setTimeout(function() {
-    const c = document.getElementById(containerId);
-    if (!c) return;
-    c.querySelectorAll('div,button,canvas~*').forEach(function(el) {
-      const cls = (el.className||'').toLowerCase();
-      if (cls.includes('pad')||cls.includes('control')||cls.includes('gamepad')||cls.includes('menu')||cls.includes('bar')) {
-        el.style.setProperty('display','none','important');
-      }
-    });
-  }, 600);
+
+  const c = document.getElementById(containerId);
+  if (!c) return;
+
+  // Sweep แรก — ทันที (ไม่รอ 600ms)
+  c.querySelectorAll('div,button').forEach(_hideIfEJSUI);
+
+  // Sweep ซ้ำหลายรอบ — จับ element ที่ EJS สร้างหลังจากนี้
+  [100, 300, 600, 1000, 1500].forEach(t =>
+    setTimeout(() => c.querySelectorAll('div,button').forEach(_hideIfEJSUI), t)
+  );
+
+  // MutationObserver — จับ element ตอน EJS insert ใหม่แบบ real-time
+  const mo = new MutationObserver(muts => {
+    muts.forEach(m => m.addedNodes.forEach(n => {
+      _hideIfEJSUI(n);
+      if (n.querySelectorAll) n.querySelectorAll('div,button').forEach(_hideIfEJSUI);
+    }));
+  });
+  mo.observe(c, { childList: true, subtree: true });
 }
 
 // ── Remap EJS SELECT key Shift → Q (Plan D) ─────────
@@ -4146,4 +4166,3 @@ function toggleControls() {
 </script>
 </body>
 </html>
-
