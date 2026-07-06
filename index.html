@@ -670,6 +670,13 @@
       display:none!important; visibility:hidden!important;
       opacity:0!important; pointer-events:none!important;
     }
+    /* Master rule: ทุก class ที่มี "ejs_" ในเกม container = hide (ยกเว้น canvas)
+       รวม ejs_button ที่ sweep เดิมจับไม่ได้ (ไม่มี keyword pad/control/gamepad ในชื่อ) */
+    #game-container-pc [class*="ejs_"]:not(canvas),
+    #game-container-mobile [class*="ejs_"]:not(canvas) {
+      display:none!important; visibility:hidden!important;
+      opacity:0!important; pointer-events:none!important;
+    }
 
     /* ════════════════════════════
        SETTINGS PANEL (slide from right)
@@ -2518,10 +2525,13 @@ async function startGame() {
 
 // ── Hide EJS gamepad ─────────────────────────────────
 // Helper: hide element ถ้าเข้าข่าย EJS UI
+// เพิ่ม 'ejs_' + 'button' — จับ class ejs_button (ปุ่ม A/B/Select/Start ของ EJS) ที่ sweep เดิมพลาด
 function _hideIfEJSUI(el) {
   if (!el || el.nodeType !== 1 || el.tagName === 'CANVAS') return;
   const cls = (el.className || '').toString().toLowerCase();
-  if (cls.includes('pad')||cls.includes('control')||cls.includes('gamepad')||cls.includes('menu')||cls.includes('bar')) {
+  if (cls.includes('ejs_') || cls.includes('pad') || cls.includes('control') ||
+      cls.includes('gamepad') || cls.includes('menu') || cls.includes('bar') ||
+      cls.includes('button')) {
     el.style.setProperty('display','none','important');
     el.style.setProperty('visibility','hidden','important');
   }
