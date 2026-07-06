@@ -2444,6 +2444,9 @@ async function startGame() {
   if (currentMode === 'mobile') { loadBtnLayout(); applyBtnLayout(); }
   setGameTitle(titleId, selectedFile.name.replace(/\.(gb|gbc)$/i,''));
   document.getElementById(progressId).style.width = '40%';
+  // Reset loading overlay — ต้อง show ครอบ EJS decompress UI ทุกครั้ง (กันเกมก่อนหน้าหลบ .hide ค้าง)
+  const _overlay = document.querySelector('#' + containerId + ' .loading-overlay');
+  if (_overlay) _overlay.classList.remove('hide');
 
   const romUrl = URL.createObjectURL(selectedFile);
 
