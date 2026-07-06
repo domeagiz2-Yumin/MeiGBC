@@ -677,6 +677,13 @@
       display:none!important; visibility:hidden!important;
       opacity:0!important; pointer-events:none!important;
     }
+    /* 🏠 บ้านๆ rule: ทุก direct child ใน game container ยกเว้น canvas + loading-overlay = hide
+       ไม่สนใจว่า class ชื่ออะไร — ถ้าอยู่ตำแหน่งนี้และไม่ใช่ canvas/loading = ต้องหาย
+       (จับ EJS UI ที่ inject มาไม่ว่าจะใช้ class ชื่ออะไร) */
+    #game-container-pc > *:not(canvas):not(.loading-overlay),
+    #game-container-mobile > *:not(canvas):not(.loading-overlay) {
+      display:none!important;
+    }
 
     /* ════════════════════════════
        SETTINGS PANEL (slide from right)
