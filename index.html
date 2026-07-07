@@ -3338,6 +3338,89 @@ function stopSRAMAutoSave() {
   _lastSramHash = null;
 }
 
+// ── Export / Import SRAM (.sav file) ─────────────────
+// Implement เอง ไม่พึ่ง EJS API — gm.exportSaveFile/importSaveFile ไม่มีจริงใน EJS stable
+// Verified 2026-07-07: WebFetch emulator.min.js → not found
+// SRAM อยู่ใน localStorage['sram_<mode>_<gameID>'] เป็น base64 อยู่แล้ว (จาก saveSRAMToStorage)
+
+function exportSRAM() {
+  if (!_currentGameID) { showSaveToast('❌ Load game first'); return; }
+
+  // เขียน SRAM ปัจจุบันลง localStorage ก่อน (กันเซพล่าสุดยังไม่ commit)
+  try { saveSRAMToStorage(); } catch(e){}
+
+  const b64 = localStorage.getItem(_sramKey(_currentGameID));
+  if (!b64) { showSaveToast('❌ No save data'); return; }
+
+  try {
+    const data = _base64ToBytes(b64);
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = _currentGameID + '.sav';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showSaveToast('📤 Exported .sav');
+  } catch(e) {
+    console.log('[EXPORT] err:', e);
+    showSaveToast('❌ Export failed');
+  }
+}
+
+function importSRAM() {
+  if (!_currentGameID) { showSaveToast('❌ Load game first'); return; }
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.sav,.srm,.dat';
+  input.style.display = 'none';
+
+  input.onchange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Validation — GBC SRAM ปกติ 8KB-32KB, ตั้ง max 128KB กันไฟล์แปลก
+    if (file.size === 0)       { showSaveToast('❌ Empty file'); return; }
+    if (file.size > 131072)    { showSaveToast('❌ File too large'); return; }
+
+    try {
+      const buf = await file.arrayBuffer();
+      const data = new Uint8Array(buf);
+
+      // เขียนลง localStorage (base64) — ใช้ helper เดิมของ Save State
+      localStorage.setItem(_sramKey(_currentGameID), _bytesToBase64(data));
+
+      // เขียนลง VFS + restart core → Gambatte re-mount SRAM ใหม่
+      // (pattern เดียวกับ restoreSRAMFromStorage ที่ work แล้ว)
+      const FS = getEjsFS();
+      if (FS) {
+        try { FS.mkdir('/data/saves/Gambatte'); } catch(err){}
+        FS.writeFile(SRAM_VFS_PATH, data);
+        _lastSramHash = hashSRAM(data);  // กัน auto-save เขียนทับครั้งแรก
+        try {
+          const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
+          const fn = gm && gm.functions;
+          if (fn && fn.loadSaveFiles) fn.loadSaveFiles();
+          if (fn && fn.restart)       fn.restart();
+          else if (gm && gm.restart)  gm.restart();
+        } catch(err){}
+      }
+
+      showSaveToast('📥 Imported ' + data.length + ' bytes');
+    } catch(err) {
+      console.log('[IMPORT] err:', err);
+      showSaveToast('❌ Import failed');
+    }
+  };
+
+  document.body.appendChild(input);
+  input.click();
+  setTimeout(() => { try { document.body.removeChild(input); } catch(e){} }, 60000);
+}
+
 // ── Settings panel ───────────────────────────────────
 function openSettings() {
   document.getElementById('settingsPanel').classList.add('open');
@@ -3543,9 +3626,10 @@ function sAction(action, val) {
     case 'load':
       quickLoadState(); closeSettings(); break;
     case 'export':
-      if (gm) { try { gm.exportSaveFile(); } catch(e){} } break;
+      exportSRAM(); closeSettings(); break;
     case 'import':
-      if (gm) { try { gm.importSaveFile(); } catch(e){} } break;
+      // ไม่ closeSettings — รอ file picker เปิดก่อน (บาง mobile browser dismiss picker ถ้าปิด overlay)
+      importSRAM(); break;
     case 'fullscreen':
       const container = currentMode === 'pc'
         ? document.getElementById('game-container-pc')
