@@ -658,22 +658,20 @@
     .btn-mid{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.7);font-family:'Press Start 2P',cursive;font-size:7px;padding:8px 16px;cursor:pointer;user-select:none;letter-spacing:1px;transition:all .1s;}
     .btn-mid:active,.btn-mid.pressed{background:rgba(255,111,216,.3);border-color:#ff6fd8;color:#fff;transform:scale(.93);}
 
-    /* Hide ALL EJS overlay UI — gamepad + menu button
-       ขยาย selector ครอบทุก class ที่ EJS อาจสร้าง (แก้ปัญหา EJS gamepad โผล่แว่บก่อน JS hide) */
-    .ejs_virtualGamepad,.ejs_gamepad,.ejs_controls_layer,
-    .ejs_menu_button,.ejs_menu,.ejs_menuContainer,
-    [class*="ejs_menu"],[class*="ejs_btn"],[class*="ejs_bar"],
-    [class*="ejs_gamepad"],[class*="ejs_control"],
-    [class*="ejs_touch"],[class*="ejs_pad"] {
+    /* Hide ALL EJS overlay UI — ยึด class จริงจาก emulator.min.css (verified 2026-07-07)
+       สาเหตุที่ selector เก่า fail: (1) case-sensitive [class*=""] ไม่ match "ejs_virtualGamepad_*"
+       เพราะ G ใหญ่  (2) เดาชื่อ ejs_control / ejs_touch / ejs_btn — EJS ไม่มี class เหล่านี้ */
+    [class*="ejs_virtualGamepad"],
+    [class*="ejs_dpad"],
+    [class*="ejs_menu_bar"],
+    .ejs_menu_button,
+    .ejs_start_button,
+    .ejs_popup_container,
+    .ejs_context_menu,
+    .ejs_settings_parent {
       display:none!important; visibility:hidden!important;
       opacity:0!important; pointer-events:none!important;
     }
-    /* หมายเหตุ: ก่อนหน้าเคยลอง approach หลายอย่างที่ทำให้จอดำ:
-       1. #container > *:not(canvas):not(.loading-overlay) { display:none }
-          → EJS wrap canvas → hide wrapper → canvas หาย
-       2. :has(canvas) + JS hideCanvasSiblings → จอดำใน PC
-       3. [class*="ejs_"]:not(canvas) → canvas wrapper อาจมี "ejs_" ในชื่อ → canvas หาย
-       รอ approach อื่นที่ปลอดภัยกว่า */
 
     /* ════════════════════════════
        SETTINGS PANEL (slide from right)
@@ -2470,7 +2468,8 @@ async function startGame() {
   window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
   window.EJS_color         = currentMode === 'pc' ? '#3bc4f2' : '#ff6fd8';
   window.EJS_startOnLoaded = true;
-  window.EJS_VirtualGamepad = false;
+  window.EJS_VirtualGamepad = false;              // legacy — เก็บไว้กัน EJS version เก่า
+  window.EJS_VirtualGamepadSettings = false;      // current API (verified 2026-07-07 จาก loader.js source)
   window.EJS_saveStateOnClose = true;
 
 
@@ -2520,29 +2519,34 @@ async function startGame() {
 }
 
 // ── Hide EJS gamepad ─────────────────────────────────
-// Helper: hide element ถ้าเข้าข่าย EJS UI
+// JS-side safety net — CSS block บนสุด (บรรทัด ~661) จับได้เกือบทุกกรณีอยู่แล้ว
+// ตัวนี้ใช้จับ element ที่ EJS อาจสร้างด้วย inline style override CSS (แต่หายาก)
+// Real class names verified จาก emulator.min.css (2026-07-07)
 function _hideIfEJSUI(el) {
   if (!el || el.nodeType !== 1 || el.tagName === 'CANVAS') return;
-  const cls = (el.className || '').toString().toLowerCase();
-  if (cls.includes('pad') || cls.includes('control') || cls.includes('gamepad') ||
-      cls.includes('menu') || cls.includes('bar')) {
+  const cls = (el.className || '').toString();  // ไม่แปลง lowercase — case-sensitive match ตรง class จริง
+  if (cls.includes('ejs_virtualGamepad') ||
+      cls.includes('ejs_dpad') ||
+      cls.includes('ejs_menu_bar') ||
+      cls.includes('ejs_menu_button') ||
+      cls.includes('ejs_start_button') ||
+      cls.includes('ejs_popup_container') ||
+      cls.includes('ejs_context_menu') ||
+      cls.includes('ejs_settings_parent')) {
     el.style.setProperty('display','none','important');
     el.style.setProperty('visibility','hidden','important');
+    el.style.setProperty('pointer-events','none','important');
   }
 }
 
 function forceHideEJSGamepad(containerId) {
-  const style = document.createElement('style');
-  style.textContent = `.ejs_virtualGamepad,.ejs_gamepad,.ejs_controls_layer,[class*="ejs_pad"],[class*="ejs_control"]{display:none!important;visibility:hidden!important;}`;
-  document.head.appendChild(style);
-
   const c = document.getElementById(containerId);
   if (!c) return;
 
-  // Sweep แรก — ทันที (ไม่รอ 600ms)
+  // Sweep แรก — ทันที
   c.querySelectorAll('div,button').forEach(_hideIfEJSUI);
 
-  // Sweep ซ้ำหลายรอบ — จับ element ที่ EJS สร้างหลังจากนี้
+  // Sweep ซ้ำหลายรอบ — จับ element ที่ EJS สร้างช้าๆ หลังจากนี้
   [100, 300, 600, 1000, 1500].forEach(t =>
     setTimeout(() => c.querySelectorAll('div,button').forEach(_hideIfEJSUI), t)
   );
