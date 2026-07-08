@@ -3343,7 +3343,7 @@ function stopSRAMAutoSave() {
 // Verified 2026-07-07: WebFetch emulator.min.js → not found
 // SRAM อยู่ใน localStorage['sram_<mode>_<gameID>'] เป็น base64 อยู่แล้ว (จาก saveSRAMToStorage)
 
-function exportSRAM() {
+async function exportSRAM() {
   if (!_currentGameID) { showSaveToast('❌ Load game first'); return; }
 
   // เขียน SRAM ปัจจุบันลง localStorage ก่อน (กันเซพล่าสุดยังไม่ commit)
@@ -3354,15 +3354,33 @@ function exportSRAM() {
 
   try {
     const data = _base64ToBytes(b64);
-    const blob = new Blob([data], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
+    const filename = _currentGameID + '.sav';
+    const file = new File([data], filename, { type: 'application/octet-stream' });
+
+    // Path 1: Web Share API 2 (Chrome Android 89+, Safari iOS 15+)
+    // Chrome Mobile block <a download> ตรงๆ ("ไม่สามารถดาวน์โหลดไฟล์ได้")
+    // → ใช้ Share dialog แทน user save/ส่งไปแอปไหนก็ได้ (Files, Drive, LINE, ...)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'DomeGBC Save', text: filename });
+        showSaveToast('📤 Shared .sav');
+        return;
+      } catch(shareErr) {
+        if (shareErr.name === 'AbortError') return;  // user cancel = เงียบ ไม่ต้อง toast
+        console.log('[EXPORT] share failed, fallback to download:', shareErr);
+        // else fall through to path 2
+      }
+    }
+
+    // Path 2: <a download> (desktop + browser ที่ไม่มี Web Share)
+    const url = URL.createObjectURL(file);
     const a = document.createElement('a');
     a.href = url;
-    a.download = _currentGameID + '.sav';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
     showSaveToast('📤 Exported .sav');
   } catch(e) {
     console.log('[EXPORT] err:', e);
